@@ -213,7 +213,12 @@ impl Generator {
         let file = quote! {
             // Re-export ResponseValue and Error since those are used by the
             // public interface of Client.
-            pub use progenitor_client::{ByteStream, Error, ResponseValue};
+            pub use progenitor_client::{
+                ByteStream,
+                Error,
+                ResponseValue,
+                generate_websocket_key
+            };
             #[allow(unused_imports)]
             use progenitor_client::{encode_path, RequestBuilderExt};
 
@@ -319,6 +324,7 @@ impl Generator {
                 #[allow(unused_imports)]
                 use super::{
                     encode_path,
+                    generate_websocket_key,
                     ByteStream,
                     Error,
                     RequestBuilderExt,
@@ -358,6 +364,7 @@ impl Generator {
                 #[allow(unused_imports)]
                 use super::{
                     encode_path,
+                    generate_websocket_key,
                     ByteStream,
                     Error,
                     RequestBuilderExt,

@@ -29,6 +29,7 @@ pub(crate) struct OperationMethod {
     params: Vec<OperationParameter>,
     responses: Vec<OperationResponse>,
     dropshot_paginated: Option<DropshotPagination>,
+    dropshot_websocket: bool,
 }
 
 enum HttpMethod {
@@ -449,8 +450,19 @@ impl Generator {
             });
         }
 
+        // TODO: should dropshot::{WEBSOCKET_EXTENSION, PAGINATION_EXTENSION} be pub for these?
         let dropshot_paginated =
             self.dropshot_pagination_data(operation, &params, &responses);
+
+        let dropshot_websocket =
+            operation.extensions.get("x-dropshot-websocket").is_some();
+
+        if dropshot_websocket && dropshot_paginated.is_some() {
+            return Err(Error::InvalidExtension(format!(
+                "conflicting extensions in {:?}",
+                operation_id
+            )));
+        }
 
         Ok(OperationMethod {
             operation_id: sanitize(operation_id, Case::Snake),
@@ -465,6 +477,7 @@ impl Generator {
             params,
             responses,
             dropshot_paginated,
+            dropshot_websocket,
         })
     }
 
@@ -705,6 +718,20 @@ impl Generator {
             (query_build, query_use)
         };
 
+        let websock_hdrs = if method.dropshot_websocket {
+            quote! {
+                .header(reqwest::header::CONNECTION, "Upgrade")
+                .header(reqwest::header::UPGRADE, "websocket")
+                .header(reqwest::header::SEC_WEBSOCKET_VERSION, "13")
+                .header(
+                    reqwest::header::SEC_WEBSOCKET_KEY,
+                    generate_websocket_key(),
+                )
+            }
+        } else {
+            quote! {}
+        };
+
         // Generate the path rename map; then use it to generate code for
         // assigning the path parameters to the `url` variable.
         let url_renames = method
@@ -879,6 +906,7 @@ impl Generator {
                 . #method_func (url)
                 #(#body_func)*
                 #query_use
+                #websock_hdrs
                 .build()?;
             #pre_hook
             let result = #client.client

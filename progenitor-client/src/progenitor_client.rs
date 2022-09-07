@@ -377,3 +377,8 @@ impl<E> RequestBuilderExt<E> for RequestBuilder {
             })?))
     }
 }
+
+#[doc(hidden)]
+pub fn generate_websocket_key() -> String {
+    base64::encode(rand::random::<[u8; 16]>())
+}
