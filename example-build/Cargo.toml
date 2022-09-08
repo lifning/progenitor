@@ -7,7 +7,7 @@ edition = "2021"
 [dependencies]
 chrono = { version = "0.4", features = ["serde"] }
 progenitor-client = { path = "../progenitor-client" }
-reqwest = { git = "https://github.com/seanmonstar/reqwest", rev = "61474f422caa6f9f843ae3a5bf656b5b3f507241", features = ["json", "stream"] }
+reqwest = { git = "https://github.com/seanmonstar/reqwest", rev = "6ceb23958c8b6d7f1d8ee093f0ad73184d133d40", features = ["json", "stream"] }
 #reqwest = { version = "0.11", features = ["json", "stream"] }
 serde = { version = "1.0", features = ["derive"] }
 uuid = { version = "1.0", features = ["serde", "v4"] }

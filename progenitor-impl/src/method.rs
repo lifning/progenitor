@@ -226,6 +226,7 @@ enum OperationResponseType {
     Type(TypeId),
     None,
     Raw,
+    Upgrade,
 }
 
 impl Generator {
@@ -339,6 +340,10 @@ impl Generator {
             })
             .collect::<Result<Vec<_>>>()?;
 
+        // TODO: should dropshot::{WEBSOCKET_EXTENSION, PAGINATION_EXTENSION} be pub for these?
+        let dropshot_websocket =
+            operation.extensions.get("x-dropshot-websocket").is_some();
+
         if let Some(body_param) = self.get_body_param(operation, components)? {
             params.push(body_param);
         }
@@ -380,14 +385,17 @@ impl Generator {
 
                 // We categorize responses as "typed" based on the
                 // "application/json" content type, "raw" if there's any other
-                // response content type (we don't investigate further), or
+                // response content type (we don't investigate further),
+                // "upgraded" if it uses the websocket extension, or
                 // "none" if there is no content.
                 // TODO if there are multiple response content types we could
                 // treat those like different response types and create an
                 // enum; the generated client method would check for the
                 // content type of the response just as it currently examines
                 // the status code.
-                let typ = if let Some(mt) =
+                let typ = if dropshot_websocket {
+                    OperationResponseType::Upgrade
+                } else if let Some(mt) =
                     response.content.get("application/json")
                 {
                     assert!(mt.encoding.is_empty());
@@ -438,6 +446,16 @@ impl Generator {
             })
             .collect::<Result<Vec<_>>>()?;
 
+        let dropshot_paginated =
+            self.dropshot_pagination_data(operation, &params, &responses);
+
+        if dropshot_websocket && dropshot_paginated.is_some() {
+            return Err(Error::InvalidExtension(format!(
+                "conflicting extensions in {:?}",
+                operation_id
+            )));
+        }
+
         // If the API has declined to specify the characteristics of a
         // successful response, we cons up a generic one. Note that this is
         // technically permissible within OpenAPI, but advised against by the
@@ -450,18 +468,9 @@ impl Generator {
             });
         }
 
-        // TODO: should dropshot::{WEBSOCKET_EXTENSION, PAGINATION_EXTENSION} be pub for these?
-        let dropshot_paginated =
-            self.dropshot_pagination_data(operation, &params, &responses);
-
-        let dropshot_websocket =
-            operation.extensions.get("x-dropshot-websocket").is_some();
-
-        if dropshot_websocket && dropshot_paginated.is_some() {
-            return Err(Error::InvalidExtension(format!(
-                "conflicting extensions in {:?}",
-                operation_id
-            )));
+        // TODO: remove, testing
+        if dropshot_websocket {
+            assert!(responses.iter().all(|x| x.typ == OperationResponseType::Upgrade));
         }
 
         Ok(OperationMethod {
@@ -818,6 +827,11 @@ impl Generator {
                             Ok(ResponseValue::stream(response))
                         }
                     }
+                    OperationResponseType::Upgrade => {
+                        quote! {
+                            Ok(ResponseValue::upgrade(response).await)
+                        }
+                    }
                 };
 
                 quote! { #pat => { #decode } }
@@ -866,6 +880,13 @@ impl Generator {
                         quote! {
                             Err(Error::ErrorResponse(
                                 ResponseValue::stream(response)
+                            ))
+                        }
+                    }
+                    OperationResponseType::Upgrade => {
+                        quote! {
+                            Err(Error::ErrorResponse(
+                                ResponseValue::upgrade(response).await
                             ))
                         }
                     }
@@ -1015,6 +1036,9 @@ impl Generator {
                 }
                 OperationResponseType::Raw => {
                     quote! { ByteStream }
+                }
+                OperationResponseType::Upgrade => {
+                    quote! { reqwest::Upgraded }
                 }
             })
             // TODO should this be a bytestream?

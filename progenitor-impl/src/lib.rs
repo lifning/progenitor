@@ -26,6 +26,8 @@ pub enum Error {
     UnexpectedFormat(String),
     #[error("invalid operation path {0}")]
     InvalidPath(String),
+    #[error("invalid dropshot extension use: {0}")]
+    InvalidExtension(String),
     #[error("internal error {0}")]
     InternalError(String),
 }

@@ -10,7 +10,7 @@ description = "An OpenAPI client generator - client support"
 bytes = "1.2.1"
 futures-core = "0.3.24"
 percent-encoding = "2.1"
-reqwest = { git = "https://github.com/seanmonstar/reqwest", rev = "61474f422caa6f9f843ae3a5bf656b5b3f507241", features = ["json", "stream"] }
+reqwest = { git = "https://github.com/seanmonstar/reqwest", rev = "6ceb23958c8b6d7f1d8ee093f0ad73184d133d40", features = ["json", "stream"] }
 #reqwest = { version = "0.11", default-features = false, features = ["json", "stream"] }
 serde = "1.0"
 serde_json = "1.0"
