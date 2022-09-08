@@ -385,8 +385,7 @@ impl Generator {
 
                 // We categorize responses as "typed" based on the
                 // "application/json" content type, "raw" if there's any other
-                // response content type (we don't investigate further),
-                // "upgraded" if it uses the websocket extension, or
+                // response content type (we don't investigate further), or
                 // "none" if there is no content.
                 // TODO if there are multiple response content types we could
                 // treat those like different response types and create an
@@ -446,16 +445,6 @@ impl Generator {
             })
             .collect::<Result<Vec<_>>>()?;
 
-        let dropshot_paginated =
-            self.dropshot_pagination_data(operation, &params, &responses);
-
-        if dropshot_websocket && dropshot_paginated.is_some() {
-            return Err(Error::InvalidExtension(format!(
-                "conflicting extensions in {:?}",
-                operation_id
-            )));
-        }
-
         // If the API has declined to specify the characteristics of a
         // successful response, we cons up a generic one. Note that this is
         // technically permissible within OpenAPI, but advised against by the
@@ -468,9 +457,14 @@ impl Generator {
             });
         }
 
-        // TODO: remove, testing
-        if dropshot_websocket {
-            assert!(responses.iter().all(|x| x.typ == OperationResponseType::Upgrade));
+        let dropshot_paginated =
+            self.dropshot_pagination_data(operation, &params, &responses);
+
+        if dropshot_websocket && dropshot_paginated.is_some() {
+            return Err(Error::InvalidExtension(format!(
+                "conflicting extensions in {:?}",
+                operation_id
+            )));
         }
 
         Ok(OperationMethod {
