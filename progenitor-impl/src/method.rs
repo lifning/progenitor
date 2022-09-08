@@ -190,6 +190,7 @@ impl OperationResponseStatus {
         matches!(
             self,
             OperationResponseStatus::Default
+                | OperationResponseStatus::Code(101)
                 | OperationResponseStatus::Code(200..=299)
                 | OperationResponseStatus::Range(2)
         )
@@ -455,6 +456,15 @@ impl Generator {
                 typ: OperationResponseType::Raw,
                 description: None,
             });
+        }
+
+        // Must accept HTTP 101 Switching Protocols
+        if dropshot_websocket {
+            responses.push(OperationResponse {
+                status_code: OperationResponseStatus::Code(101),
+                typ: OperationResponseType::Upgrade,
+                description: None,
+            })
         }
 
         let dropshot_paginated =

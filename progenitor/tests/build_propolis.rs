@@ -13,12 +13,11 @@ use propolis_client::Client;
 
 pub fn _ignore() {
     let _ = async {
-        let _upgraded: reqwest::Upgraded =
-            Client::new("")
-                .instance_serial()
-                .send()
-                .await
-                .unwrap()
-                .into_inner();
+        let _upgraded: reqwest::Upgraded = Client::new("")
+            .instance_serial()
+            .send()
+            .await
+            .unwrap()
+            .into_inner();
     };
 }
