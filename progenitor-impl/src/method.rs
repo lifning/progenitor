@@ -829,7 +829,7 @@ impl Generator {
                     }
                     OperationResponseType::Upgrade => {
                         quote! {
-                            Ok(ResponseValue::upgrade(response).await)
+                            ResponseValue::upgrade(response).await
                         }
                     }
                 };
@@ -886,7 +886,7 @@ impl Generator {
                     OperationResponseType::Upgrade => {
                         quote! {
                             Err(Error::ErrorResponse(
-                                ResponseValue::upgrade(response).await
+                                ResponseValue::upgrade(response).await?
                             ))
                         }
                     }
